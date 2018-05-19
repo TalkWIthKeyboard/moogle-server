@@ -8,7 +8,7 @@
     "compile": "tsc",
     "clean": "rm -rf dist",
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
-    "build": "npm run clean && npm run compile && jike-docker-build",
+    "build": "npm run clean && npm run compile",
     "dev": "npm run clean && npm run compile && NODE_ENV=dev PORT=3000 DEBUG=moogle:server:* node dist/src/app.js",
     "lint": "tslint --fix --project ."
   },
