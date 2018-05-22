@@ -7,7 +7,7 @@ const router = new Router()
 
 router.get('/search', async ctx => {
   const name = ctx.request.query.name
-  ctx.body = MovieHeavenSpider.search(10, name)
+  ctx.body = await MovieHeavenSpider.search(10, name)
 })
 
 router.get('/latest', async ctx => {
