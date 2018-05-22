@@ -17,16 +17,16 @@ function _restructure(movieInfo: MovieInfo) {
     introduction += `[${movieInfo.pixel}P]`
   }
   if (movieInfo.type !== '') {
-    introduction += `[${movieInfo.type}]`
+    introduction += `[${movieInfo.type.replace(/\s/g, '')}]`
   }
   if (movieInfo.location !== '') {
-    introduction += `[${movieInfo.location}]`
+    introduction += `[${movieInfo.location.replace(/\s/g, '')}]`
   }
   if (movieInfo.actors !== '') {
     introduction += `[${movieInfo.actors}]`
   }
   return {
-    name: movieInfo.name,
+    name: movieInfo.name.replace(/^' '/, ''),
     introduction,
     uri: movieInfo.uri,
   }
@@ -104,6 +104,12 @@ export async function spiderHomePage(top: number) {
   }
 }
 
+/**
+ * 从 content 中解析需要的信息
+ * @param movieInfo 
+ * @param c 
+ * @param index 
+ */
 function _parserInfo(movieInfo, c, index) {
   const content = c.data || ''
   if (index === 0) {
@@ -168,7 +174,10 @@ export async function spiderMovie(uri: string) {
 
     $("td[style='WORD-WRAP: break-word']>a").each((index, item) => {
       if ($(item).contents()[0].data) {
-        movieInfo.uri = $(item).contents()[0].data!
+        const content = $(item).contents()[0].data!
+        movieInfo.uri = content
+        movieInfo.pixel = /.*1080.*/.test(content) ? 1080 : movieInfo.pixel
+        movieInfo.pixel = /.*720.*/.test(content) ? 720 : movieInfo.pixel
       }
     })
     return _restructure(movieInfo)
