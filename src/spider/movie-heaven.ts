@@ -18,7 +18,7 @@ const REDIS_LATEST_KEY = 'moogle-server:movie-heaven:latest'
  * @param movieInfo 
  */
 function _restructure(movieInfo: MovieInfo) {
-  let introduction = ''
+  let introduction = `[${movieInfo.time.split('-').slice(0, -1).join('-')}]`
   if (movieInfo.pixel !== 0) {
     introduction += `[${movieInfo.pixel}P]`
   }
@@ -35,6 +35,7 @@ function _restructure(movieInfo: MovieInfo) {
     name: movieInfo.name.replace(/^' '/, ''),
     introduction,
     uri: movieInfo.uri,
+    time: movieInfo.time,
   }
 }
 
@@ -56,10 +57,11 @@ function _getAllActors(allContent) {
   const actors: string[] = []
   for (let index = actorIndex; index < introductionIndex; index += 2) {
     if (allContent[index].data) {
-      actors.push(allContent[index].data.split(' ')[0].match(/([\u4E00-\u9FA5]+)$/)![0])      
+      const chinese = allContent[index].data.split(' ')[0].match(/([\u4E00-\u9FA5]+)$/)
+      actors.push(chinese ? chinese[0] : null)      
     }
   }
-  return actors.slice(0, 5).join('/')
+  return _.compact(actors).slice(0, 5).join('/')
 }
 
 function getHtmlAndDecodePromise(uri: string, codeType: string) {
@@ -165,7 +167,10 @@ export async function spiderMovie(uri: string) {
       uri: '',
       name: '',
       actors: '',
+      time: '',
     }
+
+    movieInfo.time = html.match(/发布时间：([0-9-]*)/)[1]
 
     $("div[id='Zoom']>span").each((index, item) => {
       movieInfo.actors = _getAllActors($(item).contents())
@@ -176,12 +181,14 @@ export async function spiderMovie(uri: string) {
 
     // 部分页面在 span 标签下面包了一个 p 标签
     $("div[id='Zoom']>span>p").each((index, item) => {
+      movieInfo.actors = _getAllActors($(item).contents())
       _.map($(item).contents(), (c, index) => {
         _parserInfo(movieInfo, c, index)
       })
     })
 
     $("div[id='Zoom']>span>p>span").each((index, item) => {
+      movieInfo.actors = _getAllActors($(item).contents())
       _.map($(item).contents(), (c, index) => {
         _parserInfo(movieInfo, c, index)
       })

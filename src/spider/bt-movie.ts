@@ -49,7 +49,7 @@ function _parserListContent($, item): string {
  * @param movieInfo 
  */
 function _restructure(movieInfo: MovieInfo) {
-  let introduction = ''
+  let introduction = `[${movieInfo.time.split('-').slice(0, -1).join('-')}]`
   if (movieInfo.pixel !== 0) {
     introduction += `[${movieInfo.pixel}P]`
   }
@@ -66,6 +66,7 @@ function _restructure(movieInfo: MovieInfo) {
     name: movieInfo.name,
     introduction,
     uri: movieInfo.uri,
+    time: movieInfo.time,
   }
 }
 
@@ -124,6 +125,9 @@ export async function spiderMovie(id: string) {
     // 获取电影的资料
     movieInfo.name = $("div[class='vod_intro rt'] h1").contents()[0].data!
     $("div[class='vod_intro rt'] dl dd").each((index, item) => {
+      if (index === 0) {
+        movieInfo.time = $(item).contents()[0].data!.split(' ')[0]
+      }
       if (index === 2) {
         movieInfo.type = _parserListContent($, item)
       }

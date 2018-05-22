@@ -14,4 +14,5 @@ export interface MovieInfo extends MovieSource {
   actors: string
   name: string
   type: string
+  time: string
 }

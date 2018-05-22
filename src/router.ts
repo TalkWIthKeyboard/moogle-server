@@ -31,7 +31,7 @@ function _distinctByMovieName(movieLists: MovieInfo[][]): MovieInfo[] {
       }
     })
   })
-  return afterDistinctMovies
+  return _.sortBy(afterDistinctMovies, 'time').reverse()
 }
 
 router.get('/search', async ctx => {
