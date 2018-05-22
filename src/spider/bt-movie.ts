@@ -3,11 +3,17 @@ import * as cheerio from 'cheerio'
 import * as urlencode from 'urlencode'
 import * as _ from 'lodash'
 import * as Promise from 'bluebird'
-import { MovieInfo, MovieSource, MovieUnit } from './interface' 
+
+import redisClient from '../module/redis-client'
+import { MovieInfo, MovieSource, MovieUnit } from './interface'
+import { checkTTL } from '../util'
 
 const movieUri = 'http://www.btbtdy.com/btdy/dy{{id}}.html'
 const downloadUri = 'http://www.btbtdy.com/vidlist/{{id}}.html'
 const searchUri = 'http://www.btbtdy.com/search/{{name}}.html'
+
+const REDIS_SEARCH_KEY = 'moogle-server:bt-movie:search:{{word}}'
+const REDIS_LATEST_KEY = 'moogle-server:bt-movie:latest'
 
 /**
  * 获取片源的资源
@@ -68,24 +74,29 @@ function _restructure(movieInfo: MovieInfo) {
  * @param top   显示条数
  */
 export async function spiderHomePage(top: number) {
-  const opt = {
-    uri: 'http://www.btbtdy.com/btfl/dy1.html',
-    method: 'GET',
-    json: true
-  }
-  try {
-    const html = await request(opt)
-    const $ = cheerio.load(html)
-    const movieIds: string[] = []
-    $("a[class='pic_link']").each((index, item) => {
-      movieIds.push($(item).attr('href').match(/^\/btdy\/dy([0-9]*).html$/)![1])
-    })
-    const movieInfoList = await Promise.map(movieIds.slice(0, top), m => {
-      return spiderMovie(m)
-    })
-    return movieInfoList
-  } catch (err) {
-    console.log(err)
+  const cache = await redisClient.get(REDIS_LATEST_KEY)
+  if (!cache) {
+    const opt = {
+      uri: 'http://www.btbtdy.com/btfl/dy1.html',
+      method: 'GET',
+      json: true
+    }
+    try {
+      const html = await request(opt)
+      const $ = cheerio.load(html)
+      const movieIds: string[] = []
+      $("a[class='pic_link']").each((index, item) => {
+        movieIds.push($(item).attr('href').match(/^\/btdy\/dy([0-9]*).html$/)![1])
+      })
+      const movieInfoList = await Promise.map(movieIds.slice(0, top), m => {
+        return spiderMovie(m)
+      })
+      return movieInfoList
+    } catch (err) {
+      console.log(err)
+    }
+  } else {
+    return JSON.parse(cache)
   }
 }
 
@@ -155,31 +166,40 @@ export async function spiderMovie(id: string) {
  * @param name 
  */
 export async function search(top: number, name: string) {
-  const opt = {
-    uri: searchUri.replace(/{{name}}/, urlencode(name)),
-    method: 'GET',
-    json: true,
-    timeout: 5000
-  }
-  try {
-    const movieList: MovieUnit[] = []
-    const html = await request(opt)
-    const $ = cheerio.load(html)
-    $("dd[class='lf'] p strong a").each((index, item) => {
-      movieList.push({
-        id: $(item).attr('href').match(/^\/btdy\/dy([0-9]*).html$/)![1],
-        type: ''
+  const cache = await redisClient.get(REDIS_SEARCH_KEY.replace(/{{word}}/, name))
+  if (!cache) {
+    const opt = {
+      uri: searchUri.replace(/{{name}}/, urlencode(name)),
+      method: 'GET',
+      json: true,
+      timeout: 5000
+    }
+    try {
+      const movieList: MovieUnit[] = []
+      const html = await request(opt)
+      const $ = cheerio.load(html)
+      $("dd[class='lf'] p strong a").each((index, item) => {
+        movieList.push({
+          id: $(item).attr('href').match(/^\/btdy\/dy([0-9]*).html$/)![1],
+          type: ''
+        })
       })
-    })
-    $("dd[class='lf'] p span").each((index, item) => {
-      movieList[index].type = $(item).contents()[0].data!
-    })
-    const afterFilterMovies = _.filter(movieList, m => m.type!.includes('电影'))
-    const movieInfoList = await Promise.map(afterFilterMovies.slice(0, top), m => {
-      return spiderMovie(m.id)
-    })
-    return movieInfoList
-  } catch (err) {
-    console.log(err)
+      $("dd[class='lf'] p span").each((index, item) => {
+        movieList[index].type = $(item).contents()[0].data!
+      })
+      const afterFilterMovies = _.filter(movieList, m => m.type!.includes('电影'))
+      const movieInfoList = await Promise.map(afterFilterMovies.slice(0, top), m => {
+        return spiderMovie(m.id)
+      })
+      if (_.compact(movieInfoList).length === Math.min(top, afterFilterMovies.length)) {
+        await redisClient.set(REDIS_SEARCH_KEY.replace(/{{word}}/, name), JSON.stringify(movieInfoList))
+        await checkTTL(REDIS_SEARCH_KEY, 24 * 60 * 60)
+      }
+      return movieInfoList
+    } catch (err) {
+      console.log(err)
+    }
+  } else {
+    return JSON.parse(cache)
   }
 }

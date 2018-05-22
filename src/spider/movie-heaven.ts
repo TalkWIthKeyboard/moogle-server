@@ -5,7 +5,13 @@ import * as _ from 'lodash'
 import * as Promise from 'bluebird'
 import * as http from 'http'
 import * as iconv from 'iconv-lite'
+
+import redisClient from '../module/redis-client' 
 import { MovieInfo, MovieSource, MovieUnit } from './interface'
+import { checkTTL } from '../util'
+
+const REDIS_SEARCH_KEY = 'moogle-server:movie-heaven:search:{{word}}'
+const REDIS_LATEST_KEY = 'moogle-server:movie-heaven:latest'
 
 /**
  * 重新整合数据
@@ -79,28 +85,37 @@ function getHtmlAndDecodePromise(uri: string, codeType: string) {
  * @param top 
  */
 export async function spiderHomePage(top: number) {
-  const opt = {
-    uri: 'http://www.ygdy8.com/index.html',
-    method: 'GET',
-    json: true,
-    timeout: 50000,
-  }
-  try {
-    const html = await request(opt)
-    const $ = cheerio.load(html)
-    const movieUris: string[] = []
-    $("div[class='co_content4']>ul>a").each((index, item) => {
-      const uri = $(item).attr('href')
-      if (/\/html\/gndy\/dyzz\/[0-9]*\/[0-9]*\.html/.test(uri)) {
-        movieUris.push($(item).attr('href'))        
+  const cache  = await redisClient.get(REDIS_LATEST_KEY)
+  if (!cache) {
+    const opt = {
+      uri: 'http://www.ygdy8.com/index.html',
+      method: 'GET',
+      json: true,
+      timeout: 50000,
+    }
+    try {
+      const html = await request(opt)
+      const $ = cheerio.load(html)
+      const movieUris: string[] = []
+      $("div[class='co_content4']>ul>a").each((index, item) => {
+        const uri = $(item).attr('href')
+        if (/\/html\/gndy\/dyzz\/[0-9]*\/[0-9]*\.html/.test(uri)) {
+          movieUris.push($(item).attr('href'))
+        }
+      })
+      const movieInfoList = await Promise.map(movieUris.slice(0, top), m => {
+        return spiderMovie(m)
+      })
+      if (movieInfoList.length === top) {
+        await redisClient.set(REDIS_LATEST_KEY, JSON.stringify(movieInfoList))
+        await checkTTL(REDIS_LATEST_KEY, 24 * 60 * 60)
       }
-    })
-    const movieInfoList = await Promise.map(movieUris.slice(0, top), m => {
-      return spiderMovie(m)
-    })
-    return movieInfoList
-  } catch (err) {
-    console.log(err)
+      return movieInfoList
+    } catch (err) {
+      console.log(err)
+    }
+  } else {
+    return JSON.parse(cache)
   }
 }
 
@@ -192,20 +207,29 @@ export async function spiderMovie(uri: string) {
  * @param name 
  */
 export async function search(top: number, name: string) {
-  const opt = {
-    uri: `http://s.ygdy8.com/plus/so.php?kwtype=0&keyword=${urlencode(name, 'gbk')}`,
-    method: 'GET',
-    json: true,
-    timeout: 5000
+  const cache = await redisClient.get(REDIS_SEARCH_KEY.replace(/{{word}}/, name))
+  if (!cache) {
+    const opt = {
+      uri: `http://s.ygdy8.com/plus/so.php?kwtype=0&keyword=${urlencode(name, 'gbk')}`,
+      method: 'GET',
+      json: true,
+      timeout: 5000
+    }
+    const html = await request(opt)
+    const $ = cheerio.load(html)
+    const movieUris: string[] = []
+    $("div[class='co_content8']>ul>table>tbody>tr[height='24']>td[width='55%']>b>a").each((index, item) => {
+      movieUris.push($(item).attr('href'))
+    })
+    const movieInfoList = await Promise.map(movieUris.slice(0, top), m => {
+      return spiderMovie(m)
+    })
+    if (_.compact(movieInfoList).length === Math.min(top, movieUris.length)) {
+      await redisClient.set(REDIS_SEARCH_KEY.replace(/{{word}}/, name), JSON.stringify(movieInfoList))
+      await checkTTL(REDIS_SEARCH_KEY, 24 * 60 * 60)
+    }
+    return movieInfoList
+  } else {
+    return JSON.parse(cache)
   }
-  const html = await request(opt)
-  const $ = cheerio.load(html)
-  const movieUris: string[] = []
-  $("div[class='co_content8']>ul>table>tbody>tr[height='24']>td[width='55%']>b>a").each((index, item) => {
-    movieUris.push($(item).attr('href'))
-  })
-  const movieInfoList = await Promise.map(movieUris.slice(0, top), m => {
-    return spiderMovie(m)
-  })
-  return movieInfoList
 }
