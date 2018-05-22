@@ -3,28 +3,11 @@ import * as cheerio from 'cheerio'
 import * as urlencode from 'urlencode'
 import * as _ from 'lodash'
 import * as Promise from 'bluebird'
+import { MovieInfo, MovieSource, MovieUnit } from './interface' 
 
 const movieUri = 'http://www.btbtdy.com/btdy/dy{{id}}.html'
 const downloadUri = 'http://www.btbtdy.com/vidlist/{{id}}.html'
 const searchUri = 'http://www.btbtdy.com/search/{{name}}.html'
-
-interface MovieUnit {
-  id: string,
-  type?: string,
-}
-
-interface MovieSource {
-  uri: string
-  pixel: number
-}
-
-interface MovieInfo extends MovieSource {
-  location: string
-  language: string
-  actions: string
-  name: string
-  type: string
-}
 
 /**
  * 获取片源的资源
@@ -56,7 +39,7 @@ function _parserListContent($, item): string {
 }
 
 /**
- * 对movieInfo进行重构
+ * 重新整合数据
  * @param movieInfo 
  */
 function _restructure(movieInfo: MovieInfo) {
@@ -70,8 +53,8 @@ function _restructure(movieInfo: MovieInfo) {
   if (movieInfo.location !== '') {
     introduction += `[${movieInfo.location}]`
   }
-  if (movieInfo.actions !== '内详') {
-    introduction += `[${movieInfo.actions.split('/').slice(0, 5).join('/')}]`
+  if (movieInfo.actors !== '内详') {
+    introduction += `[${movieInfo.actors.split('/').slice(0, 5).join('/')}]`
   }
   return {
     name: movieInfo.name,
@@ -140,7 +123,7 @@ export async function spiderMovie(id: string) {
         movieInfo.language = _parserListContent($, item)
       }
       if ($(item).hasClass('zhuyan')) {
-        movieInfo.actions = _parserListContent($, item)
+        movieInfo.actors = _parserListContent($, item)
       }
     })
     
@@ -166,6 +149,11 @@ export async function spiderMovie(id: string) {
   }
 }
 
+/**
+ * 对一个电影进行具体的搜索
+ * @param top 
+ * @param name 
+ */
 export async function search(top: number, name: string) {
   const opt = {
     uri: searchUri.replace(/{{name}}/, urlencode(name)),
