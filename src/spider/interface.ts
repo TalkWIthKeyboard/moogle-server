@@ -16,3 +16,10 @@ export interface MovieInfo extends MovieSource {
   type: string
   time: string
 }
+
+export interface Urls {
+  search: string
+  movie: string
+  home: string
+  download?: string
+}

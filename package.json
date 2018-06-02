@@ -1,7 +1,7 @@
 {
   "name": "moogle-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "The backend of alfred-moogle.",
   "main": "index.js",
   "scripts": {
     "start": "node dist/src/app.js",
@@ -9,8 +9,8 @@
     "clean": "rm -rf dist",
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "build": "npm run clean && npm run compile",
-    "dev": "npm run clean && npm run compile && NODE_ENV=dev PORT=3000 DEBUG=moogle:server:* node dist/src/app.js",
-    "lint": "tslint --fix --project ."
+    "dev": "npm run clean && npm run compile && NODE_ENV=dev PORT=3000 DEBUG=moogle-server:* nodemon dist/src/app.js",
+    "lint": "tslint --project ."
   },
   "author": "TalkWithKeyboard",
   "license": "ISC",
