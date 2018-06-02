@@ -2,7 +2,6 @@ import * as Koa from 'koa'
 import * as bodyParser from 'koa-bodyparser'
 import * as morgan from 'koa-morgan'
 import * as cors from 'kcors'
-import * as config from 'config'
 
 import router from './router'
 

@@ -1,7 +1,7 @@
 import * as Router from 'koa-router'
 import * as Promise from 'bluebird'
-import * as BtMovieSpider from './spider/bt-movie'
-import * as MovieHeavenSpider from './spider/movie-heaven'
+import BtHome from './spider/bt-home'
+import MovieHeaven from './spider/movie-heaven'
 import * as _ from 'lodash'
 
 const router = new Router()
@@ -16,9 +16,12 @@ interface MovieInfo {
   type: string
 }
 
+const btHome = new BtHome()
+const movieHeaven = new MovieHeaven()
+
 /**
  * 通过电影名字做 distinct
- * @param movieLists 
+ * @param movieLists        多个搜索结果的电影资源
  */
 function _distinctByMovieName(movieLists: MovieInfo[][]): MovieInfo[] {
   const movieNameMap = {}
@@ -37,15 +40,15 @@ function _distinctByMovieName(movieLists: MovieInfo[][]): MovieInfo[] {
 router.get('/search', async ctx => {
   const name = ctx.request.query.name
   ctx.body = _distinctByMovieName(await Promise.all([
-    MovieHeavenSpider.search(10, name),
-    BtMovieSpider.search(10, name)
+    // btHome.search(10, name),
+    movieHeaven.search(10, name),
   ]))
 })
 
 router.get('/latest', async ctx => {
   ctx.body = _distinctByMovieName(await Promise.all([
-    MovieHeavenSpider.spiderHomePage(10),
-    BtMovieSpider.spiderHomePage(10)
+    // btHome.latest(10),
+    movieHeaven.latest(10),
   ]))
 })
 
