@@ -21,6 +21,7 @@
     "only-arrow-functions": false,
     "newline-before-return": false,
     "type-literal-delimiter": false,
+    "no-irregular-whitespace": false,    
     "no-http-string": false,
     "underscore-consistent-invocation": false,
     "comment-format": [

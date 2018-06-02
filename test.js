@@ -1,1 +1,0 @@
-console.log('◎主　　演　徐峥 Zheng Xu'.match(/([\u4E00-\u9FA5·]+) /))

@@ -20,10 +20,10 @@ export default class MovieHeaven extends Basic {
     let actorIndex = 0
     let introductionIndex = 0
     for (let index = 0; index < allContent.length; index += 1) {
-      if (/主　　演　(.*) $/.test(allContent[index].data)) {
+      if (/主　{2}演　(.*) $/.test(allContent[index].data)) {
         actorIndex = index
       }
-      if (/简　　介/.test(allContent[index].data)) {
+      if (/简　{2}介/.test(allContent[index].data)) {
         introductionIndex = index
       }
     }
@@ -59,20 +59,20 @@ export default class MovieHeaven extends Basic {
         movieInfo.pixel = /.*1080.*/.test(content) ? 1080 : movieInfo.pixel
         movieInfo.pixel = /.*720.*/.test(content) ? 720 : movieInfo.pixel
       }
-      if (/译　　名　(.*)\s*$/.test(content) && /[\u4E00-\u9FA5]+/.test(content.split('　').slice(-1)[0])) {
-        movieInfo.name = content.match(/译　　名　(.*)\s*$/)![1].split('/')[0]
+      if (/译　{2}名　(.*)\s*$/.test(content) && /[\u4E00-\u9FA5]+/.test(content.split('　').slice(-1)[0])) {
+        movieInfo.name = content.match(/译　{2}名　(.*)\s*$/)![1].split('/')[0]
       }
-      if (/片　　名　(.*)\s*$/.test(content) && /[\u4E00-\u9FA5]+/.test(content.split('　').slice(-1)[0])) {
-        movieInfo.name = content.match(/片　　名　(.*)\s*$/)![1].split('/')[0]
+      if (/片　{2}名　(.*)\s*$/.test(content) && /[\u4E00-\u9FA5]+/.test(content.split('　').slice(-1)[0])) {
+        movieInfo.name = content.match(/片　{2}名　(.*)\s*$/)![1].split('/')[0]
       }
-      if (/类　　别　(.*)\s*$/.test(content)) {
-        movieInfo.type = content.match(/类　　别　(.*)\s*$/)![1]
+      if (/类　{2}别　(.*)\s*$/.test(content)) {
+        movieInfo.type = content.match(/类　{2}别　(.*)\s*$/)![1]
       }
-      if (/语　　言　(.*)\s*$/.test(content)) {
-        movieInfo.language = content.match(/语　　言　(.*)\s*$/)![1]
+      if (/语　{2}言　(.*)\s*$/.test(content)) {
+        movieInfo.language = content.match(/语　{2}言　(.*)\s*$/)![1]
       }
-      if (/国　　家　(.*)\s*$/.test(content)) {
-        movieInfo.location = content.match(/国　　家　(.*)\s*$/)![1]
+      if (/国　{2}家　(.*)\s*$/.test(content)) {
+        movieInfo.location = content.match(/国　{2}家　(.*)\s*$/)![1]
       }
     })
   }

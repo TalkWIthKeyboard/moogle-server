@@ -40,14 +40,14 @@ function _distinctByMovieName(movieLists: MovieInfo[][]): MovieInfo[] {
 router.get('/search', async ctx => {
   const name = ctx.request.query.name
   ctx.body = _distinctByMovieName(await Promise.all([
-    // btHome.search(10, name),
+    btHome.search(10, name),
     movieHeaven.search(10, name),
   ]))
 })
 
 router.get('/latest', async ctx => {
   ctx.body = _distinctByMovieName(await Promise.all([
-    // btHome.latest(10),
+    btHome.latest(10),
     movieHeaven.latest(10),
   ]))
 })
