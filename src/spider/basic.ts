@@ -35,6 +35,7 @@ export default class Basic {
     htmlcodeType: 'utf8' | 'gb2312',
     urls: Urls
   ) {
+    this._timeout = 5000
     this._webName = webName
     this._redisLatestKey = `moogle-server:${this._webName}:latest`
     this._redisSeachKey = `moogle-server:${this._webName}:search:{{word}}`
