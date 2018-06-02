@@ -1,0 +1,13 @@
+{
+  "apps": [
+    {
+      "name": "moogle-server",
+      "script": "dist/src/app.js",
+      "env": {
+        "NODE_ENV": "dev",
+        "PORT": "5000",
+        "DEBUG": "moogle-server:*"
+      }
+    }
+  ]
+}

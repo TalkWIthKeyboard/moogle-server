@@ -4,7 +4,7 @@
   "description": "The backend of alfred-moogle.",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/src/app.js",
+    "start": "npm run clean && npm run compile && pm2 start start.json",
     "compile": "tsc",
     "clean": "rm -rf dist",
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
